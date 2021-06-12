@@ -1,18 +1,18 @@
-Mars Rover API
+<h1>Mars Rover API</h1>
 The Mars Rover API returns the last 10 days of Curiosity 
 navigation camera images with a limit of 3 images per day.
 
-Languages and Tools Used
+<h1>Languages and Tools Used</h1>
 <p align="left"> <a href="https://golang.org" target="_blank"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" alt="go" width="40" height="40"/> </a> <a href="https://www.mongodb.com/" target="_blank"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original-wordmark.svg" alt="mongodb" width="40" height="40"/> </a> </p>
 
-Installation
+<h1>Installation</h1>
 Clone the Mars Rover API repository to your local system:
 
 ```sh 
 git clone https://github.com/ecklenke9/mars-rover-api.git
 ```
 
-Running the Application
+<h1>Running the Application</h1>
 Run the following cmd at the root level of the application to fetch 
 Curiosity Rover images:
 
@@ -20,7 +20,7 @@ Curiosity Rover images:
 make rover
 ```
 
-API Endpoint (Optional)
+<h1>API Endpoint (Optional)</h1>
 This application can also be used as a web api hosted on a server.
 
 Fetch the Curiosity Rover images:
