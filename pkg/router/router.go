@@ -1,55 +1,67 @@
 package router
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"mars-rover-api/pkg/controller"
+	"mars-rover-api/pkg/model"
 	"net/http"
 	"time"
 )
 
-//New function
-func New(ctlr controller.Controller) {
+// New create the routes
+func New(ctlr *controller.Controller) {
 	router := gin.Default()
-	api := router.Group("/api")
-	{
-		api.GET("/roverImages", getRoverImages(ctlr))
-	}
+	router.GET("/roverImages", getRoverImages(ctlr))
 	router.NoRoute(func(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
 	})
 	router.Run(":8080")
 }
 
-func getRoverImages(ctlr controller.Controller) gin.HandlerFunc {
+// getRoverImages is a Router function that calls the Controller to get the
+// last 10 days of rover images
+func getRoverImages(ctlr *controller.Controller) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		roverImageArray, err := ctlr.GetRoverImages(getDates())
+		days, err := ctlr.GetRoverImages(GetDates())
 		if err != nil {
-			// error bubbled up from either the controller.Client or controller.Mongo
+			// Error bubbled up from either the controller.Client or controller.Mongo
 			c.JSON(http.StatusBadRequest, err)
 		}
 
-		// controller processed the request successfully
-		c.JSON(http.StatusOK, roverImageArray)
+		// Controller processed the request successfully
+		c.JSON(http.StatusOK, Respond(days))
 	}
 }
 
-func getDates() []string {
-	t := time.Now()
-	dateArray := make([]string, 0)
-
-	// we need the past ten days,
-	// so this loop stops at ten
-	for i := 0; i < 10; i++ {
-		// format the date into YYYY-MM-DD
-		date := t.Format("2006-01-02")
-		// add date to array of strings being returned
-		dateArray = append(dateArray, date)
-		// subtract 24 hours from the time object
-		t = t.AddDate(0, 0, -1)
-		fmt.Println("Added date to dateArray: ", date)
+// Respond is a Router helper function that takes []model.Day
+func Respond(days []model.Day) map[string][]string {
+	resp := map[string][]string{}
+	for _, day := range days {
+		if day.Images == nil {
+			day.Images = []string{}
+		}
+		resp[day.Date] = day.Images
 	}
 
-	return dateArray
+	return resp
+}
+
+func GetDates() []model.Day {
+	t := time.Now()
+
+	dayArray := make([]model.Day, 0)
+	// Pass in 10 days
+	// so this loop stops at 10
+	for i := 0; i < 10; i++ {
+		// Format the date into YYYY-MM-DD
+		date := t.Format("2006-01-02")
+		// Add date to array of strings being returned
+		dayArray = append(dayArray, model.Day{
+			Date: date,
+		})
+		// Subtract 24 hours from the time object
+		t = t.AddDate(0, 0, -1)
+	}
+
+	return dayArray
 }
