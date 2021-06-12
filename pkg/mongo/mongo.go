@@ -2,56 +2,50 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 	"os"
 )
 
-type Dao interface {
-	// TODO: add method signatures
-}
+// Create constant Collection to hold collection name
+const Collection = "test"
 
-// RoverCollection statically declared
-const RoverCollection = "rover"
-
-// Mongo - struct - expected to be populated on the Controller
-// The Controller will use this package to pull Rover Image Arrays
-// by the date given
+// Create Mongo struct to be populated on the controller
+// the controller will use this package to pull Rover image arrays
+// from mongo by the date given
 type Mongo struct {
 	client *mongo.Client
 }
 
 func Connect() (*Mongo, error) {
-	// load in mongo uri from .env file
+	// Load in mongo uri from .env file
 	err := godotenv.Load(".env")
 	if err != nil {
 		return nil, err
-		//log.Fatalf("error loading .env file")
 	}
-	// set uri from .env to var mongoUri
+
+	// Set uri from .env to var mongoUri
 	mongoUri := os.Getenv("MONGO_URI")
 
-	// set httpclient options
+	// Set httpclient options
 	clientOptions := options.Client().ApplyURI(mongoUri)
 
-	// connect to MongoDB
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	// Connect to MongoDB
+	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		//log.Fatal(err)
+		log.Fatal(err)
 		return nil, err
 	}
 
 	// Check the connection
-	err = client.Ping(context.TODO(), nil)
+	err = client.Ping(context.Background(), nil)
 	if err != nil {
-		//log.Fatal(err)
+		log.Println("Connect(): ", err)
 		return nil, err
 	}
 
-	fmt.Println("Connected to MongoDB!")
-
-	// return Mongo client
+	// Return Mongo client
 	return &Mongo{client: client}, nil
 }
