@@ -49,19 +49,19 @@ func Respond(days []model.Day) map[string][]string {
 func GetDates() []model.Day {
 	t := time.Now()
 
-	dayArray := make([]model.Day, 0)
+	initialDays := make([]model.Day, 0)
 	// Pass in 10 days
 	// so this loop stops at 10
 	for i := 0; i < 10; i++ {
 		// Format the date into YYYY-MM-DD
 		date := t.Format("2006-01-02")
 		// Add date to array of strings being returned
-		dayArray = append(dayArray, model.Day{
+		initialDays = append(initialDays, model.Day{
 			Date: date,
 		})
 		// Subtract 24 hours from the time object
 		t = t.AddDate(0, 0, -1)
 	}
 
-	return dayArray
+	return initialDays
 }

@@ -9,11 +9,11 @@ import (
 	"mars-rover-api/pkg/model"
 )
 
-func (db Mongo) CheckCache(dayArray []model.Day) ([]model.Day, error) {
+func (db Mongo) CheckCache(initialDays []model.Day) ([]model.Day, error) {
 	// For each date(d) in range dates
 	datesForQuery := make([]string, 0)
 
-	for _, d := range dayArray {
+	for _, d := range initialDays {
 		// Create a new model.Day object
 		// using the date(d) to populate the Date field
 		// on the new model.Day object
@@ -36,26 +36,44 @@ func (db Mongo) CheckCache(dayArray []model.Day) ([]model.Day, error) {
 		return nil, err
 	}
 
-	dayArray = captureFoundImages(dayArray, mongoResults)
+	finalResults := captureFoundImages(initialDays, mongoResults)
 
-	return dayArray, nil
+	return finalResults, nil
 }
 
-func (db Mongo) UpsertRoverImages(daysArray []model.Day) error {
-	ops := buildWriteOperations(daysArray)
+func captureFoundImages(initialDays, mongoResults []model.Day) []model.Day {
+	// For each day in initialDays
+	for i, v := range initialDays {
+		// Loop over the resultsDayArray to find a match
+		// for each day in the resultsDayArray
+		for _, d := range mongoResults {
+			// If original.Date matches result.Date
+			if v.Date == d.Date {
+				// Move the images from the result(d) to the og(v)
+				initialDays[i].Images = d.Images
+			}
+		}
+	}
+
+	// Return result
+	return initialDays
+}
+
+func (db Mongo) UpsertRoverImages(upsertToMongo []model.Day) error {
+	ops := buildWriteOperations(upsertToMongo)
 
 	falsePtr := false
 	_, err := db.client.Database("myFirstDatabase").Collection(Collection).BulkWrite(context.TODO(), ops, &options.BulkWriteOptions{Ordered: &falsePtr})
 	if err != nil {
-		return errors.New("unable to insert images")
+		return errors.New("unable to upsert images")
 	}
 
 	return nil
 }
 
-func buildWriteOperations(days []model.Day) []mongo.WriteModel {
+func buildWriteOperations(upsertToMongo []model.Day) []mongo.WriteModel {
 	writes := make([]mongo.WriteModel, 0)
-	for _, d := range days {
+	for _, d := range upsertToMongo {
 		op := mongo.NewUpdateOneModel()
 		op.SetFilter(bson.M{"date": d.Date})
 		op.SetUpdate(bson.M{"$set": bson.M{"images": d.Images}})
@@ -64,22 +82,4 @@ func buildWriteOperations(days []model.Day) []mongo.WriteModel {
 	}
 
 	return writes
-}
-
-func captureFoundImages(originalDayArray, resultsDayArray []model.Day) []model.Day {
-	// For each day in the originalDayArray
-	for i, v := range originalDayArray {
-		// Loop over the resultsDayArray to find a match
-		// for each day in the resultsDayArray
-		for _, d := range resultsDayArray {
-			// If original.Date matches result.Date
-			if v.Date == d.Date {
-				// Move the images from the result(d) to the og(v)
-				originalDayArray[i].Images = d.Images
-			}
-		}
-	}
-
-	// Return result
-	return originalDayArray
 }

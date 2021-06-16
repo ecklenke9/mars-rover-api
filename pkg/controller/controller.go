@@ -35,44 +35,53 @@ func New() (*Controller, error) {
 }
 
 // GetRoverImages attempts to get the Rover image array from Mongo first
-func (ctlr *Controller) GetRoverImages(originalDaysArray []model.Day) ([]model.Day, error) {
+func (ctlr *Controller) GetRoverImages(initialDays []model.Day) ([]model.Day, error) {
 	var err error
-	originalDaysArray, err = ctlr.Mongo.CheckCache(originalDaysArray)
+	mongoResults, err := ctlr.Mongo.CheckCache(initialDays)
 	if err != nil {
 		return nil, err
 	}
 
-	// UpsertArray holds each day that hasn't been stored in Mongo
-	upsertArray := make([]model.Day, 0)
+	// upsertToMongo holds each day that hasn't been stored in Mongo
+	upsertToMongo := make([]model.Day, 0)
+
+	// finalResults holds the results from both the Mongo cache and NasaApi
+	finalResults := make([]model.Day, 0)
+
 	// Loop over mongo results
-	for _, d := range originalDaysArray {
+	for _, day := range mongoResults {
 		// If the images for the day are empty
-		var imageArray []string
-		if d.Images == nil {
+		var nasaImageUrls []string
+		if len(day.Images) == 0 {
 			// Attempt to reach out to NASA for images
-			imageArray, err = ctlr.Client.CallNasaApi(d.Date)
+			nasaImageUrls, err = ctlr.Client.CallNasaApi(day.Date)
 			if err != nil {
 				log.Printf("Error calling CallNasaApi: %v", err)
 				// Could not find images
-				// setting d.Images to an array of strings
+				// setting day.Images to an array of strings
 				// instead of nil as per the Exercise Text
 				// then continue to process the next mongo result
-				d.Images = []string{}
+				day.Images = []string{}
+				finalResults = append(finalResults, day)
+				upsertToMongo = append(upsertToMongo, day)
 				continue
 			}
-			// Attach found images to the day(d)
+			// Attach found images to the day(day)
 			// Store this day in mongo for
 			// the next call to this endpoint
-			d.Images = imageArray
-			upsertArray = append(upsertArray, d)
+			day.Images = nasaImageUrls
+			finalResults = append(finalResults, day)
+			upsertToMongo = append(upsertToMongo, day)
+		} else {
+			finalResults = append(finalResults, day)
 		}
 	}
-	if len(upsertArray) != 0 {
-		err = ctlr.Mongo.UpsertRoverImages(upsertArray)
+	if len(upsertToMongo) != 0 {
+		err = ctlr.Mongo.UpsertRoverImages(upsertToMongo)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return originalDaysArray, nil
+	return finalResults, nil
 }

@@ -88,24 +88,24 @@ func (c *Client) CallNasaApi(earthDate string) ([]string, error) {
 
 // processNasaResponse will iterate over nasaResponse to grab 3 images
 func processNasaResponse(nasaResponse model.NasaClientResponse) []string {
-	imageArray := make([]string, 0)
+	imageUrls := make([]string, 0)
 
 	// If Photos do not exist
 	if len(nasaResponse.Photos) == 0 {
-		// Return the empty imageArray
-		return imageArray
+		// Return the empty imageUrls
+		return imageUrls
 	}
 
 	// For every Photo in the response from nasa
 	for _, p := range nasaResponse.Photos {
-		// Append the imgSrc to the imageArry
-		imageArray = append(imageArray, p.ImgSrc)
-		// If imageArray is 3 photos full
-		if len(imageArray) == 3 {
-			// Return imageArray
-			return imageArray
+		// Append the imgSrc to the imageUrls
+		imageUrls = append(imageUrls, p.ImgSrc)
+		// If imageUrls is 3 photos full
+		if len(imageUrls) == 3 {
+			// Return imageUrls
+			return imageUrls
 		}
 	}
 
-	return imageArray
+	return imageUrls
 }
